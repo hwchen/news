@@ -3,10 +3,7 @@ use hyper::{Client, Request};
 use lazy_static::lazy_static;
 use serde::Deserialize;
 use serde_json;
-use tracing::{
-    field,
-    info,
-};
+use tracing::info;
 
 use crate::Result;
 
@@ -45,7 +42,7 @@ pub async fn fetch_reddit_new<C>(
     info!(
         url = url,
         status = res.status().as_u16(),
-        headers = field::debug(res.headers()),
+        headers = ?res.headers(),
     );
 
     let bytes = res.into_body().try_concat().await?;

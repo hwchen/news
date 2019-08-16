@@ -3,10 +3,7 @@ use hyper::Client;
 use lazy_static::lazy_static;
 use serde::Deserialize;
 use serde_json;
-use tracing::{
-    field,
-    info,
-};
+use tracing::info;
 
 use crate::Result;
 
@@ -25,9 +22,9 @@ pub async fn fetch_hn_top<C>(client: &Client<C, hyper::Body>) -> Result<Vec<u32>
     let res = client.get(HN_TOP.clone()).await?;
 
     info!(
-        url = field::debug(&*HN_TOP),
+        url = ?&*HN_TOP,
         status = res.status().as_u16(),
-        headers = field::debug(res.headers()),
+        headers = ?res.headers(),
     );
 
     let bytes = res.into_body().try_concat().await?;
@@ -53,7 +50,7 @@ pub async fn fetch_hn_item<C>(item: u32, client: &Client<C, hyper::Body>) -> Res
     info!(
         url = url.as_str(),
         status = res.status().as_u16(),
-        headers = field::debug(res.headers()),
+        headers = ?res.headers(),
     );
 
     let bytes = res.into_body().try_concat().await?;
