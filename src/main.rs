@@ -56,13 +56,15 @@ async fn main() -> Result<()> {
         println!("{}", line);
     }
 
+    println!();
+
     // reddit
     let subreddit = "rust";
     let n = 30;
     let new_posts = fetch_reddit_new(&client, subreddit, n).await?;
 
     for post in new_posts.iter() {
-        println!("\n{}", post.title);
+        println!("{}", post.title.red());
         if post.domain != "self.rust" {
             println!("  {}", post.url);
         }
