@@ -15,6 +15,7 @@ lazy_static! {
 
 const MY_USER_AGENT: &str = "linux:reddit-focus:v0.0.1 (by /u/hwchen)";
 
+#[tracing::instrument]
 pub async fn fetch_reddit_new<C>(
     client: &Client<C, hyper::Body>,
     subreddit: &str,
@@ -33,7 +34,13 @@ pub async fn fetch_reddit_new<C>(
         .header("Authorization", format!("Bearer {}", "")) // don't know why this works
         .body(hyper::Body::empty())?;
 
+    info!(
+        start = "start reddit-timer",
+    );
     let res = client.request(req).await?;
+    info!(
+        end = "end reddit-timer",
+    );
 
     info!(
         url = url,
