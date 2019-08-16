@@ -18,3 +18,4 @@ tracing-futures = { git = "https://github.com/tokio-rs/tracing", features = ["st
 tracing-fmt = { git = "https://github.com/tokio-rs/tracing" }
 lazy_static = "1.3.0"
 url = "2.1.0"
+colored = "1.8.0"
