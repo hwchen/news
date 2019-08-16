@@ -31,6 +31,20 @@ async fn main() -> Result<()> {
     let client = Client::builder()
         .build::<_, hyper::Body>(https);
 
+    // reddit
+    let subreddit = "rust";
+    let n = 30;
+    let new_posts = fetch_reddit_new(&client, subreddit, n).await?;
+
+    for post in new_posts.iter() {
+        println!("{}", post.title.red());
+        if post.domain != "self.rust" {
+            println!("  {}", post.url);
+        }
+        println!("  https://reddit.com{}", post.permalink);
+    }
+
+    println!();
 
     //hn
     let tops = fetch_hn_top(&client).await?;
@@ -54,21 +68,6 @@ async fn main() -> Result<()> {
         line.push_str(hn_discussion_url);
 
         println!("{}", line);
-    }
-
-    println!();
-
-    // reddit
-    let subreddit = "rust";
-    let n = 30;
-    let new_posts = fetch_reddit_new(&client, subreddit, n).await?;
-
-    for post in new_posts.iter() {
-        println!("{}", post.title.red());
-        if post.domain != "self.rust" {
-            println!("  {}", post.url);
-        }
-        println!("  https://reddit.com{}", post.permalink);
     }
 
     Ok(())
