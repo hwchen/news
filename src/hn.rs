@@ -3,7 +3,10 @@ use hyper::Client;
 use lazy_static::lazy_static;
 use serde::Deserialize;
 use serde_json;
-use tracing::info;
+use tracing::{
+    debug,
+    info,
+};
 
 use crate::Result;
 
@@ -29,7 +32,7 @@ pub async fn fetch_hn_top<C>(client: &Client<C, hyper::Body>) -> Result<Vec<u32>
 
     let bytes = res.into_body().try_concat().await?;
 
-    info!(
+    debug!(
         body = std::str::from_utf8(&bytes)?,
     );
 
@@ -56,6 +59,10 @@ pub async fn fetch_hn_item<C>(item: u32, client: &Client<C, hyper::Body>) -> Res
     let bytes = res.into_body().try_concat().await?;
 
     let item = serde_json::from_slice(&bytes)?;
+
+    debug!(
+        ?item,
+    );
 
     Ok(item)
 }
