@@ -1,5 +1,3 @@
-#![feature(async_await)]
-
 mod hn;
 mod reddit;
 
