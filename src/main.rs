@@ -25,7 +25,7 @@ async fn main() -> Result<()> {
     tracing::subscriber::set_global_default(subscriber)?;
 
     // instantiate client
-    let https = HttpsConnector::new(4)?;
+    let https = HttpsConnector::new()?;
     let client = Client::builder()
         .build::<_, hyper::Body>(https);
 
