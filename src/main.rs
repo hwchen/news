@@ -5,15 +5,13 @@ use colored::*;
 use hyper::Client;
 use hyper_tls::HttpsConnector;
 
-use crate::hn:: {
+use crate::hn::{
     fetch_hn_top,
     fetch_hn_item,
     HN_DISCUSSION,
 };
 
-use crate::reddit:: {
-    fetch_reddit_new,
-};
+use crate::reddit::fetch_reddit_new;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
