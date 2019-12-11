@@ -1,8 +1,13 @@
-use futures_util::TryStreamExt;
-use hyper::{Client, Request};
+use hyper::{
+    client::connect::Connection,
+    service::Service,
+    Client,
+    Request,
+};
 use lazy_static::lazy_static;
 use serde::Deserialize;
 use serde_json;
+use tokio::io::{AsyncRead, AsyncWrite};
 use tracing::{
     debug,
     info,
@@ -21,7 +26,11 @@ pub async fn fetch_reddit_new<C>(
     subreddit: &str,
     n: usize,
 ) -> Result<Vec<PostData>>
-    where C: hyper::client::connect::Connect + 'static
+    where C: Service<hyper::Uri> + Clone + Send + Sync + 'static,
+        // this is the one that gets around sealed Connect
+        C::Response: Connection + AsyncRead + AsyncWrite + Send + Unpin + 'static,
+        C::Future: Send + Unpin + 'static,
+        C::Error: Into<Box<dyn std::error::Error + Send + Sync + 'static>>
 {
     // set up url
     let url = format!("https://oauth.reddit.com/r/{}/new.json", subreddit);
@@ -48,13 +57,13 @@ pub async fn fetch_reddit_new<C>(
         headers = ?res.headers(),
     );
 
-    let bytes = res.into_body().try_concat().await?;
+    let bytes = hyper::body::to_bytes(res.into_body()).await?;
 
     debug!(
-        body = std::str::from_utf8(&bytes)?,
+        body = std::str::from_utf8(&bytes.slice(..))?,
     );
 
-    let new: RedditNew = serde_json::from_slice(&bytes)?;
+    let new: RedditNew = serde_json::from_slice(&bytes.slice(..))?;
     let posts = new.data.children.into_iter().map(|post| post.data).collect();
 
     Ok(posts)

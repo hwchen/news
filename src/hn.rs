@@ -1,8 +1,12 @@
-use futures_util::TryStreamExt;
-use hyper::Client;
+use hyper::{
+    client::connect::Connection,
+    service::Service,
+    Client,
+};
 use lazy_static::lazy_static;
 use serde::Deserialize;
 use serde_json;
+use tokio::io::{AsyncRead, AsyncWrite};
 use tracing::{
     debug,
     info,
@@ -19,7 +23,11 @@ lazy_static! {
 
 #[tracing::instrument]
 pub async fn fetch_hn_top<C>(client: &Client<C, hyper::Body>) -> Result<Vec<u32>>
-    where C: hyper::client::connect::Connect + 'static
+    where C: Service<hyper::Uri> + Clone + Send + Sync + 'static,
+        // this is the one that gets around sealed Connect, `src/client/connect/mod.rs#271
+        C::Response: Connection + AsyncRead + AsyncWrite + Send + Unpin + 'static,
+        C::Future: Send + Unpin + 'static,
+        C::Error: Into<Box<dyn std::error::Error + Send + Sync + 'static>>
 {
     // Why does `get` consume the uri?
     let res = client.get(HN_TOP.clone()).await?;
@@ -30,10 +38,10 @@ pub async fn fetch_hn_top<C>(client: &Client<C, hyper::Body>) -> Result<Vec<u32>
         headers = ?res.headers(),
     );
 
-    let bytes = res.into_body().try_concat().await?;
+    let bytes = hyper::body::to_bytes(res.into_body()).await?;
 
     debug!(
-        body = std::str::from_utf8(&bytes)?,
+        body = std::str::from_utf8(&bytes.slice(..))?,
     );
 
     let users: Vec<_> = serde_json::from_slice(&bytes)?;
@@ -43,7 +51,11 @@ pub async fn fetch_hn_top<C>(client: &Client<C, hyper::Body>) -> Result<Vec<u32>
 
 #[tracing::instrument]
 pub async fn fetch_hn_item<C>(item: u32, client: &Client<C, hyper::Body>) -> Result<Item>
-    where C: hyper::client::connect::Connect + 'static
+    where C: Service<hyper::Uri> + Clone + Send + Sync + 'static,
+        // this is the one that gets around sealed Connect, `src/client/connect/mod.rs#271
+        C::Response: Connection + AsyncRead + AsyncWrite + Send + Unpin + 'static,
+        C::Future: Send + Unpin + 'static,
+        C::Error: Into<Box<dyn std::error::Error + Send + Sync + 'static>>
 {
     let url = HN_ITEM
         .join(&format!("{}.json", item))?;
@@ -56,7 +68,7 @@ pub async fn fetch_hn_item<C>(item: u32, client: &Client<C, hyper::Body>) -> Res
         headers = ?res.headers(),
     );
 
-    let bytes = res.into_body().try_concat().await?;
+    let bytes = hyper::body::to_bytes(res.into_body()).await?;
 
     let item = serde_json::from_slice(&bytes)?;
 
