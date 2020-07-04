@@ -14,9 +14,9 @@ lazy_static! {
     pub(crate) static ref HN_DISCUSSION: url::Url = "https://news.ycombinator.com/item".parse().unwrap();
 }
 
-pub fn fetch_hn_top() -> Result<Vec<u32>>
+pub fn fetch_hn_top(agent: &ureq::Agent) -> Result<Vec<u32>>
 {
-    let res = ureq::get(&HN_TOP).call();
+    let res = agent.get(&HN_TOP).call();
 
     info!("{url}, {status}",
         url = HN_TOP.to_string(),
@@ -28,12 +28,12 @@ pub fn fetch_hn_top() -> Result<Vec<u32>>
     Ok(users)
 }
 
-pub fn fetch_hn_item(item: u32) -> Result<Item>
+pub fn fetch_hn_item(agent: &ureq::Agent, item: u32) -> Result<Item>
 {
     let url = HN_ITEM
         .join(&format!("{}.json", item))?;
 
-    let res = ureq::get(url.as_str()).call();
+    let res = agent.get(url.as_str()).call();
 
     info!("{url}, {status}",
         url = url.as_str(),

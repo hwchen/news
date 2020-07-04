@@ -33,10 +33,14 @@ fn main() -> Result<()> {
     println!();
 
     //hn
-    let tops = fetch_hn_top()?;
+
+    // use connection pool
+    let agent = ureq::agent();
+
+    let tops = fetch_hn_top(&agent)?;
 
     for top in tops.iter().take(30) {
-        let item = fetch_hn_item(*top)?;
+        let item = fetch_hn_item(&agent, *top)?;
 
         let mut hn_discussion_url = HN_DISCUSSION.clone();
         hn_discussion_url
