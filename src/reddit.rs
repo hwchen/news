@@ -1,36 +1,14 @@
-use hyper::{
-    client::connect::Connection,
-    service::Service,
-    Client,
-    Request,
-};
-use lazy_static::lazy_static;
 use serde::Deserialize;
-use serde_json;
-use tokio::io::{AsyncRead, AsyncWrite};
-use tracing::{
-    debug,
-    info,
-};
+use log::info;
 
 use crate::Result;
 
-lazy_static! {
-}
-
 const MY_USER_AGENT: &str = "linux:reddit-focus:v0.0.1 (by /u/hwchen)";
 
-#[tracing::instrument]
-pub async fn fetch_reddit_new<C>(
-    client: &Client<C, hyper::Body>,
+pub fn fetch_reddit_new(
     subreddit: &str,
     n: usize,
 ) -> Result<Vec<PostData>>
-    where C: Service<hyper::Uri> + Clone + Send + Sync + 'static,
-        // this is the one that gets around sealed Connect
-        C::Response: Connection + AsyncRead + AsyncWrite + Send + Unpin + 'static,
-        C::Future: Send + Unpin + 'static,
-        C::Error: Into<Box<dyn std::error::Error + Send + Sync + 'static>>
 {
     // set up url
     let url = format!("https://oauth.reddit.com/r/{}/new.json", subreddit);
@@ -38,32 +16,22 @@ pub async fn fetch_reddit_new<C>(
     url.set_query(Some(&format!("limit={}", n)));
     let url = url.as_str();
 
-    let req = Request::get(url)
-        .header("User-Agent", MY_USER_AGENT)
-        .header("Authorization", format!("Bearer {}", "")) // don't know why this works
-        .body(hyper::Body::empty())?;
+    info!("start reddit-timer");
 
-    info!(
-        start = "start reddit-timer",
-    );
-    let res = client.request(req).await?;
-    info!(
-        end = "end reddit-timer",
-    );
+    let res = ureq::get(url)
+        .set("User-Agent", MY_USER_AGENT)
+        .set("Authorization", &format!("Bearer {}", "")) // don't know why this works
+        .call();
 
-    info!(
+
+    info!("end reddit-timer");
+
+    info!("{url}, {status}",
         url = url,
-        status = res.status().as_u16(),
-        headers = ?res.headers(),
+        status = res.status(),
     );
 
-    let bytes = hyper::body::to_bytes(res.into_body()).await?;
-
-    debug!(
-        body = std::str::from_utf8(&bytes.slice(..))?,
-    );
-
-    let new: RedditNew = serde_json::from_slice(&bytes.slice(..))?;
+    let new: RedditNew = res.into_json_deserialize()?;
     let posts = new.data.children.into_iter().map(|post| post.data).collect();
 
     Ok(posts)

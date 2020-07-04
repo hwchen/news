@@ -2,8 +2,6 @@ mod hn;
 mod reddit;
 
 use colored::*;
-use hyper::Client;
-use hyper_tls::HttpsConnector;
 
 use crate::hn::{
     fetch_hn_top,
@@ -15,20 +13,14 @@ use crate::reddit::fetch_reddit_new;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
-#[tokio::main]
-async fn main() -> Result<()> {
+fn main() -> Result<()> {
     // set up logging
-    tracing_subscriber::fmt::init();
-
-    // instantiate client
-    let https = HttpsConnector::new();
-    let client = Client::builder()
-        .build::<_, hyper::Body>(https);
+    env_logger::init();
 
     // reddit
     let subreddit = "rust";
     let n = 30;
-    let new_posts = fetch_reddit_new(&client, subreddit, n).await?;
+    let new_posts = fetch_reddit_new(subreddit, n)?;
 
     for post in new_posts.iter() {
         println!("{}", post.title.red());
@@ -41,10 +33,10 @@ async fn main() -> Result<()> {
     println!();
 
     //hn
-    let tops = fetch_hn_top(&client).await?;
+    let tops = fetch_hn_top()?;
 
     for top in tops.iter().take(30) {
-        let item = fetch_hn_item(*top, &client).await?;
+        let item = fetch_hn_item(*top)?;
 
         let mut hn_discussion_url = HN_DISCUSSION.clone();
         hn_discussion_url

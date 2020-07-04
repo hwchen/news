@@ -16,3 +16,9 @@ this lets me scroll, with colors:
 ```
 $ news | less -r
 ```
+
+## deps
+Removing reqwest for ureq.
+
+Dep count with reqwest (tokio and tracing): 190
+Dep count with ureq and env-logger: 105
